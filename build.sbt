@@ -1,5 +1,6 @@
 name := "bitcoin-payments-provider"
 
+
 version := "1.0"
 
 lazy val `bitcoin-payments-provider` = (project in file(".")).enablePlugins(PlayJava)
