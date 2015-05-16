@@ -1,0 +1,14 @@
+# Routes
+# This file defines all application routes (Higher priority routes first)
+# ~~~~
+
+# Management
+GET        /management/initDB         controllers.Management.initDB()
+GET        /management/resetDB        controllers.Management.resetDB()
+
+# Get user information (including balance) by id and name
+GET        /account/get/id/:id        controllers.Interface.getUserById(id)
+GET        /account/get/name/:name    controllers.Interface.getUserByName(name)
+
+# Relevant TX notify
+GET        /management/txnotify       controllers.Management.txNotify()
