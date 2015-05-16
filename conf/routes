@@ -2,16 +2,16 @@
 # This file defines all application routes (Higher priority routes first)
 # ~~~~
 
-# Management
-GET        /management/initDB             controllers.Management.initDB()
-GET        /management/resetDB            controllers.Management.resetDB()
-
 # Get user information (including balance) by id and name
-GET        /account/get/id/:id            controllers.Interface.getUserById(id)
-GET        /account/get/name/:name        controllers.Interface.getUserByName(name)
+GET        /account/:name                           controllers.Interface.getUser(name)
+GET        /account/:name/transactions/:page        controllers.Interface.getTransactionsForUser(name : String, page : Integer)
+GET        /account/:name/addresses                 controllers.Interface.getAddressesForUser(name)
+GET        /account/:name/addresses/new             controllers.Interface.getNewAddressForUser(name)
 
-# Relevant TX notify
-GET        /management/txnotify           controllers.Management.txNotify()
+# Get cluster information
+GET        /clusters/list                           controllers.Interface.getClusters()
+GET        /clusters/:id/status                     controllers.Interface.getClusterStatus(id : Integer)
 
-
-GET        /                              controllers.Interface.index()
+# Relevant TX notify and block notify
+GET        /callback/txnotify                       controllers.Callbacks.txNotify()
+GET        /callback/blocknotify                    controllers.Callbacks.blockNotify()

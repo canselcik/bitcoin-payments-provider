@@ -1,23 +1,57 @@
 package controllers;
 
-import internal.BitcoindRPCWrapper;
-import play.*;
+import com._37coins.bcJsonRpc.pojo.Info;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+import internal.Bitcoind;
+import internal.BitcoindClusters;
+import play.libs.Json;
 import play.mvc.*;
 
-import views.html.*;
+import java.util.List;
 
 public class Interface extends Controller {
-    public static Result index() {
-        return ok(BitcoindRPCWrapper.getInfo("http://localhost:8332/",
-                                             "bitcoinrpc",
-                                             "6bGCbjN24TvpAKVJyUfWDvpHzat8HYnVrBmFhaxRfEFn"));
-    }
-
-    public static Result getUserById(String id) {
+    public static Result getUser(String name) {
         return Results.TODO;
     }
 
-    public static Result getUserByName(String name){
-        return Results.TODO;
+    public static Result getTransactionsForUser(String name, Integer page) {
+        List<ObjectNode> txs = Bitcoind.getTransactions(name, page);
+        if(txs == null)
+            return internalServerError();
+        return ok(Json.toJson(txs));
+    }
+
+    public static Result getAddressesForUser(String name) {
+        List<String> addresses = Bitcoind.getAddresses(name);
+        if(addresses == null)
+            return internalServerError();
+        return ok(Json.toJson(addresses));
+    }
+
+    public static Result getNewAddressForUser(String name) {
+        String address = Bitcoind.getNewAddress(name);
+        if(address == null)
+            return internalServerError();
+        return ok(Json.toJson(address));
+    }
+
+    public static Result getClusterStatus(Integer id) {
+        Info info = Bitcoind.getInfo(id);
+        if(info == null)
+            return internalServerError("An error occurred while querying the cluster.");
+        return ok(Json.toJson(info));
+    }
+
+    private static final ObjectMapper mapper = new ObjectMapper();
+    public static Result getClusters(){
+        List<BitcoindClusters.ClusterInfo> clusters = BitcoindClusters.getClusters();
+        if(clusters == null)
+            return internalServerError("An error occurred while fetching available clusters");
+
+        ObjectNode root = mapper.createObjectNode();
+        for(BitcoindClusters.ClusterInfo info : clusters)
+            root.put(info.id, info.connString);
+        return ok(root);
     }
 }
