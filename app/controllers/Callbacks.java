@@ -1,5 +1,6 @@
 package controllers;
 
+import internal.Bitcoind;
 import internal.rpc.BitcoindInterface;
 import internal.rpc.pojo.Transaction;
 import internal.BitcoindClusters;
@@ -162,46 +163,47 @@ public class Callbacks extends Controller {
         Transaction tx = bi.gettransaction(payload);
         long confirmations = tx.getConfirmations();
         String account = tx.getAccount();
+        String address = tx.getAddress();
+        String txType = tx.getCategory();
         BigDecimal amount = tx.getAmount();
 
-        // TODO: Figure out a way to programmatically find out if tx is inbound or outbound
-        boolean txInbound = true;
-        if(!txInbound)
-            return internalServerError("Outbound tx requires no additional balance bookkeeping on txnotify");
+        if(!txType.equals("receive"))
+            return ok("Outbound tx requires no additional balance bookkeeping on txnotify");
 
-        // TODO: Instead of checking if tx has confirmations at this point, check if we think it is pending or confirmed.
-        if(confirmations == 0){
-            TxDatabasePresence presence = txPresentInDB(payload);
-            if(presence.getValue() != TxDatabasePresence.NOT_PRESENT.getValue())
-                return internalServerError("DatabasePresence for the tx is not 'NOT_PRESENT'");
+        TxDatabasePresence presence = txPresentInDB(payload);
 
+        // First time seeing the tx
+        if(presence.getValue() == TxDatabasePresence.NOT_PRESENT.getValue()){
             long relevantUserId = getIdFromAccountName(account);
             if(relevantUserId < 0)
                 return internalServerError("Related user account cannot be found");
 
             long amountInSAT = amount.multiply(BigDecimal.valueOf(10 ^ 8)).longValue();
-            boolean txDbPushResult = insertTxIntoDB(payload, relevantUserId, txInbound, false, amountInSAT);
+            boolean txDbPushResult = insertTxIntoDB(payload, relevantUserId, true, false, amountInSAT);
             if(!txDbPushResult)
                 return internalServerError("Failed to commit the tx into the DB");
 
-            // Since we are dealing with an unconfirmed tx, we will increment the unconfirmed balance
-            long unconfirmedUserBalance = getUserBalance(relevantUserId, false);
-            if(unconfirmedUserBalance < 0)
+            // TODO: Check if we have the transaction's inputs in our used txo table. If they are there, return.
+            // TODO: If not, add the transaction inputs to the used txos table and continue
+
+            boolean confirmed = (confirmations >= Bitcoind.CONFIRM_AFTER);
+            long userBalance = getUserBalance(relevantUserId, confirmed);
+            if(userBalance < 0)
                 return internalServerError("Failed to retrieve unconfirmed user balance before updating it");
 
-            boolean updateBalanceResult = updateUserBalance(relevantUserId, false, unconfirmedUserBalance + amountInSAT);
+            boolean updateBalanceResult = updateUserBalance(relevantUserId, false, userBalance + amountInSAT);
             if(updateBalanceResult)
                 return ok("Transaction processed");
             else
                 return internalServerError("Failed to update user balance");
         }
         else {
-            // TODO: Check if we have the transaction's inputs in our used txo table
-            // TODO: If it isn't, mark the transaction confirmed, decrement unconfirmed balance, increment confirmed balance
-            // TODO: Add the transaction inputs to the used txos table.
+            // We have seen this tx before.
+            // TODO: Check if we have the transaction's inputs in our used txo table. If they are there, return.
+            // TODO: If not, add the transaction inputs to the used txos table, mark the transaction confirmed,
+            // TODO: decrement unconfirmed balance, increment confirmed balance
+            return Results.TODO;
         }
-
-        return Results.TODO;
     }
 
     public static Result blockNotify(String payload) {
