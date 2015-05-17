@@ -23,10 +23,7 @@ public class Global extends GlobalSettings {
             s.addBatch("CREATE INDEX account_holders_account_name_idx ON account_holders(account_name);");
             s.addBatch("CREATE INDEX used_txos_associated_internaltx_id_idx ON used_txos(associated_internaltx_id);");
 
-            int[] r = s.executeBatch();
-            for(int i : r){
-                Logger.error(String.valueOf(i));
-            }
+            s.executeBatch();
             return true;
         } catch (SQLException e) {
             e.printStackTrace();

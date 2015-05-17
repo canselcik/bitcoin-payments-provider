@@ -76,7 +76,8 @@ public class BitcoindClusters {
         Integer assignment = checkClusterAssignmentFromDB(user);
         if(assignment == null){
             assignment = assignCluster(user);
-            if( !writeClusterAssignmentToDB(user, Integer.parseInt(clusters.get(assignment).id)) );
+            boolean writeResult = writeClusterAssignmentToDB(user, Integer.parseInt(clusters.get(assignment).id));
+            if(!writeResult)
                 return null;
         }
         return clusters.get(assignment).factory.getClient();
@@ -96,7 +97,8 @@ public class BitcoindClusters {
             ps.setLong(4, 0);
             int affectedRows = ps.executeUpdate();
             c.close();
-            return affectedRows == 1;
+            boolean res = (affectedRows == 1);
+            return res;
         } catch (SQLException e) {
             e.printStackTrace();
             return false;
