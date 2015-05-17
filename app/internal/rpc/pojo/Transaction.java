@@ -56,7 +56,7 @@ public class Transaction {
 	private long timereceived;
 	private long blocktime;
 	private List<String> walletconflicts;
-	private List<Transaction> details;
+	private List<TransactionDetails> details;
 	private String address;
     private String txid;
     private long block;
@@ -160,10 +160,10 @@ public class Transaction {
 		this.blockhash = blockhash;
 		return this;
 	}
-	public List<Transaction> getDetails() {
+	public List<TransactionDetails> getDetails() {
 		return details;
 	}
-	public Transaction setDetails(List<Transaction> details) {
+	public Transaction setDetails(List<TransactionDetails> details) {
 		this.details = details;
 		return this;
 	}

@@ -169,6 +169,7 @@ public class Callbacks extends Controller {
         if(!txInbound)
             return internalServerError("Outbound tx requires no additional balance bookkeeping on txnotify");
 
+        // TODO: Instead of checking if tx has confirmations at this point, check if we think it is pending or confirmed.
         if(confirmations == 0){
             TxDatabasePresence presence = txPresentInDB(payload);
             if(presence.getValue() != TxDatabasePresence.NOT_PRESENT.getValue())
