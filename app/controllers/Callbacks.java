@@ -108,15 +108,11 @@ public class Callbacks extends Controller {
     private static long getUserBalance(long userId, boolean confirmed){
         Connection c = DB.getConnection();
         try {
+            String fetchCol = confirmed ? "confirmed_satoshi_balance" : "unconfirmed_satoshi_balance";
             PreparedStatement ps =
-                    c.prepareStatement("SELECT ? AS balance FROM account_holders WHERE account_id = ?");
+                    c.prepareStatement("SELECT " + fetchCol + " FROM account_holders WHERE account_id = ?");
 
-            ps.setLong(2, userId);
-            if(confirmed)
-                ps.setString(1, "confirmed_satoshi_balance");
-            else
-                ps.setString(1, "unconfirmed_satoshi_balance");
-
+            ps.setLong(1, userId);
             ResultSet rs = ps.executeQuery();
             c.close();
 
@@ -135,15 +131,12 @@ public class Callbacks extends Controller {
     private static boolean updateUserBalance(long userId, boolean confirmed, long updatedValue){
         Connection c = DB.getConnection();
         try {
+            String updateCol = confirmed ? "confirmed_satoshi_balance" : "unconfirmed_satoshi_balance";
             PreparedStatement ps =
-                    c.prepareStatement("UPDATE account_holders SET ? = ? WHERE account_id = ?");
-            if(confirmed)
-                ps.setString(1, "confirmed_satoshi_balance");
-            else
-                ps.setString(1, "unconfirmed_satoshi_balance");
+                    c.prepareStatement("UPDATE account_holders SET " + updateCol + " = ? WHERE account_id = ?");
 
-            ps.setLong(2, updatedValue);
-            ps.setLong(3, userId);
+            ps.setLong(1, updatedValue);
+            ps.setLong(2, userId);
 
             int updatedRows = ps.executeUpdate();
             c.close();
@@ -179,14 +172,14 @@ public class Callbacks extends Controller {
                 return internalServerError("Related user account cannot be found");
 
             long amountInSAT = amount.multiply(BigDecimal.valueOf(10 ^ 8)).longValue();
-            boolean txDbPushResult = insertTxIntoDB(payload, relevantUserId, true, false, amountInSAT);
+            boolean confirmed = (confirmations >= Bitcoind.CONFIRM_AFTER);
+            boolean txDbPushResult = insertTxIntoDB(payload, relevantUserId, true, confirmed, amountInSAT);
             if(!txDbPushResult)
                 return internalServerError("Failed to commit the tx into the DB");
 
             // TODO: Check if we have the transaction's inputs in our used txo table. If they are there, return.
             // TODO: If not, add the transaction inputs to the used txos table and continue
 
-            boolean confirmed = (confirmations >= Bitcoind.CONFIRM_AFTER);
             long userBalance = getUserBalance(relevantUserId, confirmed);
             if(userBalance < 0)
                 return internalServerError("Failed to retrieve unconfirmed user balance before updating it");
