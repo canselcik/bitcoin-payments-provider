@@ -12,6 +12,9 @@ GET        /account/:name/addresses/new             controllers.Interface.getNew
 GET        /clusters/list                           controllers.Interface.getClusters()
 GET        /clusters/:id/status                     controllers.Interface.getClusterStatus(id : Integer)
 
+# Sweep and send
+GET        /clusters/:id/sweep/:target              controllers.Interface.sweepFunds(id : Integer, target : String)
+
 # Relevant TX notify and block notify
-GET        /callback/txnotify                       controllers.Callbacks.txNotify()
-GET        /callback/blocknotify                    controllers.Callbacks.blockNotify()
+GET        /callback/txnotify/:payload              controllers.Callbacks.txNotify(payload : String)
+GET        /callback/blocknotify/:payload           controllers.Callbacks.blockNotify(payload : String)

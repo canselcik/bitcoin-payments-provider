@@ -6,3 +6,4 @@ fi
 
 # We know that the len(txid) >= 1
 echo "[$(date)] walletnotify.sh: $1" >> /home/main/notify.log
+curl "http://localhost:9000/callback/txnotify/$1"

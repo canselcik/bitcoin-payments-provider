@@ -10,6 +10,7 @@ import java.security.MessageDigest;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -64,15 +65,65 @@ public class BitcoindClusters {
     }
 
     public static BitcoindInterface getClusterInterface(Integer clusterId){
-        if(clusterId >= clusters.size())
-            return null;
-        return clusters.get(clusterId).factory.getClient();
+        for(ClusterInfo i : clusters){
+            if(i.id.equals(String.valueOf(clusterId)))
+                return i.factory.getClient();
+        }
+        return null;
     }
 
     public static BitcoindInterface getInterface(String user){
-        // TODO: (1) First check if we already have an assignment for this user
-        //          (a) If so, return interface for that
-        //          (b) If not, run assignCluster(user) and add an entry for the user to DB.
-        return clusters.get(assignCluster(user)).factory.getClient();
+        Integer assignment = checkClusterAssignmentFromDB(user);
+        if(assignment == null){
+            assignment = assignCluster(user);
+            if( !writeClusterAssignmentToDB(user, Integer.parseInt(clusters.get(assignment).id)) );
+                return null;
+        }
+        return clusters.get(assignment).factory.getClient();
+    }
+
+    private static boolean writeClusterAssignmentToDB(String user, Integer clusterAssignment){
+        Connection c = DB.getConnection();
+        if(c == null)
+            return false;
+        try {
+            PreparedStatement ps =
+                 c.prepareStatement("INSERT INTO account_holders" +
+                  "(account_name, cluster_id, confirmed_satoshi_balance, unconfirmed_satoshi_balance) VALUES(?, ?, ?, ?)");
+            ps.setString(1, user);
+            ps.setInt(2, clusterAssignment);
+            ps.setLong(3, 0);
+            ps.setLong(4, 0);
+            int affectedRows = ps.executeUpdate();
+            c.close();
+            return affectedRows == 1;
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+
+    private static Integer checkClusterAssignmentFromDB(String user){
+        Connection c = DB.getConnection();
+        if(c == null)
+            return null;
+        try {
+            PreparedStatement ps = c.prepareStatement("SELECT cluster_id FROM account_holders WHERE account_name = ?");
+            ps.setString(1, user);
+            ResultSet rs = ps.executeQuery();
+            if(rs == null) return null;
+            if(!rs.next()) return null;
+            Integer result = rs.getInt(1);
+            c.close();
+
+            for(int i = 0; i < clusters.size(); i++){
+                if( clusters.get(i).id.equals(String.valueOf(result)) )
+                    return i;
+            }
+            return null;
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return null;
+        }
     }
 }

@@ -54,4 +54,17 @@ public class Interface extends Controller {
             root.put(info.id, info.connString);
         return ok(root);
     }
+
+    public static Result sweepFunds(Integer id, String target) {
+        Bitcoind.Pair<String, Long> sweepResult = Bitcoind.sweepFunds(id, target);
+        if(sweepResult == null)
+            return internalServerError("An error occurred while sweeping funds");
+        if(sweepResult.u == -1l)
+            return internalServerError(sweepResult.t);
+
+        ObjectNode root = mapper.createObjectNode();
+        root.put("tx", sweepResult.t);
+        root.put("satoshi_amount", sweepResult.u);
+        return ok(root);
+    }
 }

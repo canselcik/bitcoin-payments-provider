@@ -6,16 +6,40 @@ import com._37coins.bcJsonRpc.pojo.Transaction;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 
 
 public class Bitcoind {
+    private static final BigDecimal TX_FEE = BigDecimal.valueOf(0.0001);
+    public static class Pair<T, U> {
+        public final T t;
+        public final U u;
+
+        public Pair(T t, U u) {
+            this.t= t;
+            this.u= u;
+        }
+    }
+
     public static String getNewAddress(String user) {
         BitcoindInterface btcdInterface = BitcoindClusters.getInterface(user);
         if(btcdInterface == null)
             return null;
         return btcdInterface.getnewaddress(user);
+    }
+
+    public static Pair<String, Long> sweepFunds(Integer id, String target) {
+        BitcoindInterface btcdInterface = BitcoindClusters.getClusterInterface(id);
+        if(btcdInterface == null)
+            return new Pair<String, Long>("Cannot find cluster", -1l);
+        BigDecimal clusterBalance = btcdInterface.getbalance();
+        if(clusterBalance == null)
+            return new Pair<String, Long>("Cannot fetch cluster balance", -1l);
+
+        String txHash = btcdInterface.sendtoaddress(target, clusterBalance.subtract(TX_FEE));
+        return new Pair<String, Long>(txHash, clusterBalance.multiply(BigDecimal.valueOf(10 ^ 8)).longValueExact());
     }
 
     public static Info getInfo(Integer clusterId){
