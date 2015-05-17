@@ -109,13 +109,13 @@ public class Callbacks extends Controller {
         Connection c = DB.getConnection();
         try {
             PreparedStatement ps =
-                    c.prepareStatement("SELECT ? FROM account_holders WHERE account_id = ?");
+                    c.prepareStatement("SELECT ? AS balance FROM account_holders WHERE account_id = ?");
 
             ps.setLong(2, userId);
             if(confirmed)
-                ps.setString(1, "confirmed_satoshi_balance AS balance");
+                ps.setString(1, "confirmed_satoshi_balance");
             else
-                ps.setString(1, "unconfirmed_satoshi_balance AS balance");
+                ps.setString(1, "unconfirmed_satoshi_balance");
 
             ResultSet rs = ps.executeQuery();
             c.close();
