@@ -11,58 +11,19 @@ import com.fasterxml.jackson.annotation.JsonValue;
 @JsonInclude(Include.NON_NULL)
 //@JsonIgnoreProperties(ignoreUnknown=true)
 public class Transaction {
-	
-	public enum Category {
-	    RECEIVE("receive"),
-	    SEND("send"),
-	    CONFLICTED("conflicted"),
-	    MOVE("move");
-	    
-	    private String text;
-
-	    Category(String text) {
-	      this.text = text;
-	    }
-	    
-	    @JsonValue
-	    final String value() {
-	        return this.text;
-	    }
-
-	    public String getText() {
-	      return this.text;
-	    }
-	    
-	    @JsonCreator
-	    public static Category fromString(String text) {
-	      if (text != null) {
-	        for (Category b : Category.values()) {
-	          if (text.equalsIgnoreCase(b.text)) {
-	            return b;
-	          }
-	        }
-	      }
-	      return null;
-	    }
-	}
-
-
 	private BigDecimal fee;
 	private BigDecimal amount;
 	private long blockindex;
-	private Category category;
 	private long confirmations;
 	private long time;
 	private long timereceived;
 	private long blocktime;
 	private List<String> walletconflicts;
 	private List<TransactionDetails> details;
-	private String address;
     private String txid;
     private long block;
     private String hex;
     private String blockhash;
-    private String account;
     private String otheraccount;
     private String comment;
     private String to;
@@ -110,13 +71,20 @@ public class Transaction {
 		this.blockindex = blockindex;
 		return this;
 	}
-	public Category getCategory() {
-		return category;
+	public String getCategory() {
+		if(details == null || details.size() == 0)
+			return null;
+		String categoryString = null;
+		for(TransactionDetails d : details){
+			if(categoryString == null)
+				categoryString = d.getCategory();
+			else
+			if(!categoryString.equals(d.getCategory()))
+				return null;
+		}
+		return categoryString;
 	}
-	public Transaction setCategory(Category category) {
-		this.category = category;
-		return this;
-	}
+
 	public long getConfirmations() {
 		return confirmations;
 	}
@@ -125,11 +93,17 @@ public class Transaction {
 		return this;
 	}
 	public String getAddress() {
-		return address;
-	}
-	public Transaction setAddress(String address) {
-		this.address = address;
-		return this;
+		if(details == null || details.size() == 0)
+			return null;
+		String addrString = null;
+		for(TransactionDetails d : details){
+			if(addrString == null)
+				addrString = d.getAddress();
+			else
+				if(!addrString.equals(d.getAddress()))
+					return null;
+		}
+		return addrString;
 	}
 	public String getTxid() {
 		return txid;
@@ -168,11 +142,17 @@ public class Transaction {
 		return this;
 	}
 	public String getAccount() {
-		return account;
-	}
-	public Transaction setAccount(String account) {
-		this.account = account;
-		return this;
+		if(details == null || details.size() == 0)
+			return null;
+		String accountString = null;
+		for(TransactionDetails d : details){
+			if(accountString == null)
+				accountString = d.getAccount();
+			else
+			if(!accountString.equals(d.getAccount()))
+				return null;
+		}
+		return accountString;
 	}
 	public long getTime() {
 		return time;
