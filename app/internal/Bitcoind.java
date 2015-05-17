@@ -1,8 +1,8 @@
 package internal;
 
-import com._37coins.bcJsonRpc.BitcoindInterface;
-import com._37coins.bcJsonRpc.pojo.Info;
-import com._37coins.bcJsonRpc.pojo.Transaction;
+import internal.rpc.BitcoindInterface;
+import internal.rpc.pojo.Info;
+import internal.rpc.pojo.Transaction;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 

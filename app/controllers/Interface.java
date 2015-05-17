@@ -1,6 +1,6 @@
 package controllers;
 
-import com._37coins.bcJsonRpc.pojo.Info;
+import internal.rpc.pojo.Info;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import internal.Bitcoind;

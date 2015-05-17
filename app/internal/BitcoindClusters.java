@@ -1,7 +1,7 @@
 package internal;
 
-import com._37coins.bcJsonRpc.BitcoindClientFactory;
-import com._37coins.bcJsonRpc.BitcoindInterface;
+import internal.rpc.BitcoindClientFactory;
+import internal.rpc.BitcoindInterface;
 import com.google.common.primitives.Longs;
 import play.db.DB;
 

@@ -1,7 +1,7 @@
 package controllers;
 
-import com._37coins.bcJsonRpc.BitcoindInterface;
-import com._37coins.bcJsonRpc.pojo.Transaction;
+import internal.rpc.BitcoindInterface;
+import internal.rpc.pojo.Transaction;
 import internal.BitcoindClusters;
 import play.db.DB;
 import play.mvc.*;
