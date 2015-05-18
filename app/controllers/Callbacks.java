@@ -11,6 +11,7 @@ import java.math.BigDecimal;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.util.List;
 
 public class Callbacks extends Controller {
     private enum TxDatabasePresence {
@@ -150,52 +151,87 @@ public class Callbacks extends Controller {
         }
     }
 
+    private static boolean txInputsUsedInDB(Transaction tx){
+        // TODO: Implement
+        return false;
+    }
+
+    private static boolean addTxInputsToDB(Transaction tx) {
+        // TODO: Implement
+        return true;
+    }
+
     public static Result txNotify(String payload) {
         // TODO: Figure out a way to pick cluster, maybe picking at random might make sense.
         BitcoindInterface bi = BitcoindClusters.getClusterInterface(1);
         Transaction tx = bi.gettransaction(payload);
         long confirmations = tx.getConfirmations();
+        boolean confirmed = (confirmations >= Bitcoind.CONFIRM_AFTER);
         String account = tx.getAccount();
         String address = tx.getAddress();
         String txType = tx.getCategory();
         BigDecimal amount = tx.getAmount();
+        long relevantUserId = getIdFromAccountName(account);
+        long amountInSAT = amount.multiply(BigDecimal.valueOf(10 ^ 8)).longValue();
 
         if(!txType.equals("receive"))
             return ok("Outbound tx requires no additional balance bookkeeping on txnotify");
+
+        if(relevantUserId < 0)
+            return internalServerError("Related user account cannot be found");
 
         TxDatabasePresence presence = txPresentInDB(payload);
 
         // First time seeing the tx
         if(presence.getValue() == TxDatabasePresence.NOT_PRESENT.getValue()){
-            long relevantUserId = getIdFromAccountName(account);
-            if(relevantUserId < 0)
-                return internalServerError("Related user account cannot be found");
-
-            long amountInSAT = amount.multiply(BigDecimal.valueOf(10 ^ 8)).longValue();
-            boolean confirmed = (confirmations >= Bitcoind.CONFIRM_AFTER);
             boolean txDbPushResult = insertTxIntoDB(payload, relevantUserId, true, confirmed, amountInSAT);
             if(!txDbPushResult)
                 return internalServerError("Failed to commit the tx into the DB");
 
-            // TODO: Check if we have the transaction's inputs in our used txo table. If they are there, return.
-            // TODO: If not, add the transaction inputs to the used txos table and continue
+            if(txInputsUsedInDB(tx))
+                return internalServerError("Inputs of this transaction has already been funded (NOT_PRESENT)");
 
             long userBalance = getUserBalance(relevantUserId, confirmed);
             if(userBalance < 0)
                 return internalServerError("Failed to retrieve unconfirmed user balance before updating it");
 
-            boolean updateBalanceResult = updateUserBalance(relevantUserId, false, userBalance + amountInSAT);
-            if(updateBalanceResult)
-                return ok("Transaction processed");
-            else
+            if(confirmed)
+                if(!addTxInputsToDB(tx))
+                    return internalServerError("Failed to add tx inputs to DB");
+
+            boolean updateBalanceResult = updateUserBalance(relevantUserId, confirmed, userBalance + amountInSAT);
+            if(!updateBalanceResult)
                 return internalServerError("Failed to update user balance");
+
+            return ok("Transaction processed");
         }
         else {
-            // We have seen this tx before.
-            // TODO: Check if we have the transaction's inputs in our used txo table. If they are there, return.
-            // TODO: If not, add the transaction inputs to the used txos table, mark the transaction confirmed,
-            // TODO: decrement unconfirmed balance, increment confirmed balance
-            return Results.TODO;
+            // We have seen this tx before, now we try to confirm it.
+            if(txInputsUsedInDB(tx))
+                return internalServerError("Inputs of this transaction has already been funded (!=NOT_PRESENT)");
+            if(!confirmed)
+                return internalServerError("We have a record of this tx but it still isn't confirmed. No action taken.");
+            if(!addTxInputsToDB(tx))
+                return internalServerError("Failed to add tx inputs to DB");
+            if(!updateTxStatus(payload, true))
+                return internalServerError("Failed to mark the TX confirmed");
+
+            long unconfirmedUserBalance = getUserBalance(relevantUserId, false);
+            long confirmedUserBalance = getUserBalance(relevantUserId, true);
+            if(confirmedUserBalance < 0 || unconfirmedUserBalance < 0)
+                return internalServerError("Failed to retrieve user balances before updating it");
+            if(unconfirmedUserBalance < amountInSAT)
+                return internalServerError("User account receiving confirmation for the tx has an unconfirmed balance lower than the tx amount");
+
+            unconfirmedUserBalance -= amountInSAT;
+            confirmedUserBalance += amountInSAT;
+
+            boolean updateUnconfirmedResult = updateUserBalance(relevantUserId, false, unconfirmedUserBalance);
+            boolean updateConfirmedResult = updateUserBalance(relevantUserId, true, confirmedUserBalance);
+            if(!updateConfirmedResult || !updateUnconfirmedResult)
+                return internalServerError("Failed to update user balances");
+
+            return ok("Transaction processed successfully");
         }
     }
 
