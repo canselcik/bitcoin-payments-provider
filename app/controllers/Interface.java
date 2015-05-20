@@ -5,14 +5,38 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import internal.Bitcoind;
 import internal.BitcoindClusters;
+import play.db.DB;
 import play.libs.Json;
 import play.mvc.*;
 
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.util.List;
 
 public class Interface extends Controller {
     public static Result getUser(String name) {
-        return Results.TODO;
+        Connection c = DB.getConnection();
+        try {
+            PreparedStatement ps = c.prepareStatement("SELECT * FROM account_holders WHERE account_name = ?");
+            ps.setString(1, name);
+            ResultSet rs = ps.executeQuery();
+            if(rs == null || !rs.next()) {
+                c.close();
+                return internalServerError("User not found");
+            }
+            c.close();
+            ObjectNode root = mapper.createObjectNode();
+            root.put("user_id", rs.getLong("account_id"));
+            root.put("account_name", rs.getString("account_name"));
+            root.put("cluster_id", rs.getLong("cluster_id"));
+            root.put("confirmed_satoshi_balance", rs.getLong("confirmed_satoshi_balance"));
+            root.put("unconfirmed_satoshi_balance", rs.getLong("unconfirmed_satoshi_balance"));
+            return ok(root);
+        } catch(Exception e){
+            e.printStackTrace();
+            return internalServerError("An error occurred while fetching user information");
+        }
     }
 
     public static Result getTransactionsForUser(String name, Integer page) {

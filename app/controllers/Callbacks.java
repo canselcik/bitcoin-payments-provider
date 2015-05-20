@@ -211,19 +211,19 @@ public class Callbacks extends Controller {
     public static Result txNotify(String payload) {
         // TODO: Figure out a way to pick cluster, maybe picking at random might make sense.
         BitcoindInterface bi = BitcoindClusters.getClusterInterface(1);
-        RawTransaction rt = bi.getrawtransaction(payload, 1);
         Transaction tx = bi.gettransaction(payload);
+        String txType = tx.getCategory();
+        if(!txType.equals("receive"))
+            return ok("Outbound tx requires no additional balance bookkeeping on txnotify");
+
+        RawTransaction rt = bi.getrawtransaction(payload, 1);
         long confirmations = tx.getConfirmations();
         boolean confirmed = (confirmations >= Bitcoind.CONFIRM_AFTER);
         String account = tx.getAccount();
         String address = tx.getAddress();
-        String txType = tx.getCategory();
         BigDecimal amount = tx.getAmount();
         long relevantUserId = getIdFromAccountName(account);
         long amountInSAT = amount.multiply(BigDecimal.valueOf(100000000)).longValueExact();
-
-        if(!txType.equals("receive"))
-            return ok("Outbound tx requires no additional balance bookkeeping on txnotify");
 
         if(relevantUserId < 0)
             return internalServerError("Related user account cannot be found");
