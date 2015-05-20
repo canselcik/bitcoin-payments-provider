@@ -3,11 +3,12 @@ package internal.rpc.pojo;
 import java.math.BigDecimal;
 import java.util.List;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 
 @JsonInclude(Include.ALWAYS)
-//@JsonIgnoreProperties(ignoreUnknown=true)
+@JsonIgnoreProperties(ignoreUnknown=true)
 public class Transaction {
     private String txid;
 	private BigDecimal fee;
@@ -16,6 +17,9 @@ public class Transaction {
 	private long confirmations;
 	private long time;
 	private long timereceived;
+	private String account;
+	private String category;
+	private String address;
 	private long block;
 	private String hex;
 	private String blockhash;
@@ -25,6 +29,10 @@ public class Transaction {
 	private long blocktime;
 	private List<String> walletconflicts;
 	private List<TransactionDetails> details;
+
+	public String getAccount() { return account; }
+
+	public String getCategory() { return category; }
 
 	public String getOtheraccount() {
 		return otheraccount;
@@ -68,7 +76,8 @@ public class Transaction {
 		this.blockindex = blockindex;
 		return this;
 	}
-	public String getCategory() {
+
+	/*public String getCategory() {
 		if(details == null || details.size() == 0)
 			return null;
 		String categoryString = null;
@@ -80,7 +89,7 @@ public class Transaction {
 				return null;
 		}
 		return categoryString;
-	}
+	}*/
 
 	public long getConfirmations() {
 		return confirmations;
@@ -89,7 +98,8 @@ public class Transaction {
 		this.confirmations = confirmations;
 		return this;
 	}
-	public String getAddress() {
+	public String getAddress() { return address; }
+	/*public String getAddress() {
 		if(details == null || details.size() == 0)
 			return null;
 		String addrString = null;
@@ -101,7 +111,8 @@ public class Transaction {
 					return null;
 		}
 		return addrString;
-	}
+	}*/
+
 	public String getTxid() {
 		return txid;
 	}
@@ -137,19 +148,6 @@ public class Transaction {
 	public Transaction setDetails(List<TransactionDetails> details) {
 		this.details = details;
 		return this;
-	}
-	public String getAccount() {
-		if(details == null || details.size() == 0)
-			return null;
-		String accountString = null;
-		for(TransactionDetails d : details){
-			if(accountString == null)
-				accountString = d.getAccount();
-			else
-			if(!accountString.equals(d.getAccount()))
-				return null;
-		}
-		return accountString;
 	}
 	public long getTime() {
 		return time;
