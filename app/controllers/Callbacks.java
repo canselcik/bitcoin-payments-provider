@@ -284,6 +284,6 @@ public class Callbacks extends Controller {
     }
 
     public static Result blockNotify(String payload) {
-        return Results.TODO;
+        return ok("NOT IMPLEMENTED YET");
     }
 }

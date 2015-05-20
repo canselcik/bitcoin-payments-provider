@@ -8,4 +8,4 @@ fi
 echo "[$(date)] walletnotify.sh: $1" >> /home/main/notify.log
 
 RESPONSE=$(curl "http://localhost:9000/callback/txnotify/$1")
-echo "\tResult: $RESPONSE" >> /home/main/notify.log
+echo "   Result: $RESPONSE" >> /home/main/notify.log

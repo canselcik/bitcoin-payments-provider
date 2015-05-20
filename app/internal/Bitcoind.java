@@ -40,8 +40,13 @@ public class Bitcoind {
         if(clusterBalance == null)
             return new Pair<String, Long>("Cannot fetch cluster balance", -1l);
 
-        String txHash = btcdInterface.sendtoaddress(target, clusterBalance.subtract(TX_FEE));
-        return new Pair<String, Long>(txHash, clusterBalance.multiply(BigDecimal.valueOf(100000000)).longValueExact());
+        BigDecimal netSweepAmount = clusterBalance.subtract(TX_FEE);
+        // If the netSweepAmount is negative, we don't create the tx
+        if(netSweepAmount.compareTo(BigDecimal.valueOf(0)) == -1)
+            return new Pair<String, Long>("The cluster doesn't have large enough of a balance to create a sweep tx", -1l);
+
+        String txHash = btcdInterface.sendtoaddress(target, netSweepAmount);
+        return new Pair<String, Long>(txHash, netSweepAmount.multiply(BigDecimal.valueOf(100000000)).longValueExact());
     }
 
     public static Info getInfo(Integer clusterId){

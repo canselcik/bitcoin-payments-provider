@@ -12,11 +12,13 @@ public class TransactionDetails {
 	private String address;
 	private String category;
 	private BigDecimal amount;
+	private BigDecimal fee;
 	private int vout;
 
 	public String getAccount() { return account; }
 	public String getAddress() { return address; }
 	public String getCategory() { return category; }
 	public BigDecimal getAmount() { return amount; }
+	public BigDecimal getFee() { return fee; }
 	public int getVout() { return vout; }
 }
