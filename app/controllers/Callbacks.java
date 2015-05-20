@@ -124,7 +124,7 @@ public class Callbacks extends Controller {
                 return -1;
             if(!rs.next())
                 return -1;
-            return rs.getLong("balance");
+            return rs.getLong(fetchCol);
         }
         catch(Exception e){
             e.printStackTrace();
@@ -193,9 +193,9 @@ public class Callbacks extends Controller {
         Connection conn = DB.getConnection();
         try {
             for(String txid : inputTxIds){
-                PreparedStatement ps = conn.prepareStatement("INSERT INTO used_txos (txo, associated_internaltx_id) VALUES (?, ?)");
+                PreparedStatement ps = conn.prepareStatement("INSERT INTO used_txos (txo, new_txid) VALUES (?, ?)");
                 ps.setString(1, txid);
-                ps.setString(2, tx.getTxid()); // TODO: We are using the external one -- need to rename the column
+                ps.setString(2, tx.getTxid());
                 int res = ps.executeUpdate();
                 if(res == 0)
                     return false;
@@ -220,7 +220,7 @@ public class Callbacks extends Controller {
         String txType = tx.getCategory();
         BigDecimal amount = tx.getAmount();
         long relevantUserId = getIdFromAccountName(account);
-        long amountInSAT = amount.multiply(BigDecimal.valueOf(10 ^ 8)).longValue();
+        long amountInSAT = amount.multiply(BigDecimal.valueOf(100000000)).longValueExact();
 
         if(!txType.equals("receive"))
             return ok("Outbound tx requires no additional balance bookkeeping on txnotify");

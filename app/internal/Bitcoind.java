@@ -41,7 +41,7 @@ public class Bitcoind {
             return new Pair<String, Long>("Cannot fetch cluster balance", -1l);
 
         String txHash = btcdInterface.sendtoaddress(target, clusterBalance.subtract(TX_FEE));
-        return new Pair<String, Long>(txHash, clusterBalance.multiply(BigDecimal.valueOf(10 ^ 8)).longValue());
+        return new Pair<String, Long>(txHash, clusterBalance.multiply(BigDecimal.valueOf(100000000)).longValueExact());
     }
 
     public static Info getInfo(Integer clusterId){
