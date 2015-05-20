@@ -4,14 +4,7 @@ import java.math.BigDecimal;
 import java.util.List;
 import java.util.Map;
 
-import internal.rpc.pojo.Account;
-import internal.rpc.pojo.Address;
-import internal.rpc.pojo.AddressInformation;
-import internal.rpc.pojo.Block;
-import internal.rpc.pojo.Info;
-import internal.rpc.pojo.LastBlock;
-import internal.rpc.pojo.Transaction;
-
+import internal.rpc.pojo.*;
 
 
 public interface BitcoindInterface {
@@ -58,6 +51,8 @@ public interface BitcoindInterface {
 	public long gethashespersec();
 	//Returns an object about the given transaction hash.
 	public Transaction gettransaction(String hash);
+	// Returns an object representing the raw tx info for the given tx hash.
+	public RawTransaction getrawtransaction(String hash, int verbose);
 	//Returns Object that has account names as keys, account balances as values.
 	public Map<String,BigDecimal> listaccounts(long confirmations);
 	//Returns an array of objects containing:"account" : the account of the receiving addresses,"amount" : total amount received by addresses with this account,"confirmations" : number of confirmations of the most recent transaction included

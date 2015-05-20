@@ -2,8 +2,10 @@ package controllers;
 
 import internal.Bitcoind;
 import internal.rpc.BitcoindInterface;
+import internal.rpc.pojo.RawTransaction;
 import internal.rpc.pojo.Transaction;
 import internal.BitcoindClusters;
+import internal.rpc.pojo.VinBlock;
 import play.db.DB;
 import play.mvc.*;
 
@@ -11,6 +13,7 @@ import java.math.BigDecimal;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.List;
 
 public class Callbacks extends Controller {
@@ -151,19 +154,64 @@ public class Callbacks extends Controller {
         }
     }
 
-    private static boolean txInputsUsedInDB(Transaction tx){
-        // TODO: Implement
-        return false;
+    private static boolean txInputsUsedInDB(RawTransaction tx){
+        if(tx == null)
+            return true;
+        List<String> inputTxIds = tx.extractInputTxIds();
+        if(inputTxIds.size() == 0)
+            return true;
+
+        Connection conn = DB.getConnection();
+        try {
+            for(String txid : inputTxIds) {
+                PreparedStatement ps = conn.prepareStatement("SELECT count(*) FROM used_txos WHERE txo = ?");
+                ps.setString(1, txid);
+                ResultSet rs = ps.executeQuery();
+                if (rs == null || !rs.next()) {
+                    conn.close();
+                    return true;
+                }
+                Integer count = rs.getInt(1);
+                if (count == null || count > 0)
+                    return true;
+            }
+            conn.close();
+            return false;
+        } catch (Exception e) {
+            e.printStackTrace();
+            return true;
+        }
     }
 
-    private static boolean addTxInputsToDB(Transaction tx) {
-        // TODO: Implement
-        return true;
+    private static boolean addTxInputsToDB(RawTransaction tx) {
+        if(tx == null)
+            return false;
+        List<String> inputTxIds = tx.extractInputTxIds();
+        if(inputTxIds.size() == 0)
+            return false;
+
+        Connection conn = DB.getConnection();
+        try {
+            for(String txid : inputTxIds){
+                PreparedStatement ps = conn.prepareStatement("INSERT INTO used_txos (txo, associated_internaltx_id) VALUES (?, ?)");
+                ps.setString(1, txid);
+                ps.setString(2, tx.getTxid()); // TODO: We are using the external one -- need to rename the column
+                int res = ps.executeUpdate();
+                if(res == 0)
+                    return false;
+            }
+            conn.close();
+            return true;
+        } catch (Exception e) {
+            e.printStackTrace();
+            return false;
+        }
     }
 
     public static Result txNotify(String payload) {
         // TODO: Figure out a way to pick cluster, maybe picking at random might make sense.
         BitcoindInterface bi = BitcoindClusters.getClusterInterface(1);
+        RawTransaction rt = bi.getrawtransaction(payload, 1);
         Transaction tx = bi.gettransaction(payload);
         long confirmations = tx.getConfirmations();
         boolean confirmed = (confirmations >= Bitcoind.CONFIRM_AFTER);
@@ -188,7 +236,7 @@ public class Callbacks extends Controller {
             if(!txDbPushResult)
                 return internalServerError("Failed to commit the tx into the DB");
 
-            if(txInputsUsedInDB(tx))
+            if(txInputsUsedInDB(rt))
                 return internalServerError("Inputs of this transaction has already been funded (NOT_PRESENT)");
 
             long userBalance = getUserBalance(relevantUserId, confirmed);
@@ -196,7 +244,7 @@ public class Callbacks extends Controller {
                 return internalServerError("Failed to retrieve unconfirmed user balance before updating it");
 
             if(confirmed)
-                if(!addTxInputsToDB(tx))
+                if(!addTxInputsToDB(rt))
                     return internalServerError("Failed to add tx inputs to DB");
 
             boolean updateBalanceResult = updateUserBalance(relevantUserId, confirmed, userBalance + amountInSAT);
@@ -207,11 +255,11 @@ public class Callbacks extends Controller {
         }
         else {
             // We have seen this tx before, now we try to confirm it.
-            if(txInputsUsedInDB(tx))
+            if(txInputsUsedInDB(rt))
                 return internalServerError("Inputs of this transaction has already been funded (!=NOT_PRESENT)");
             if(!confirmed)
                 return internalServerError("We have a record of this tx but it still isn't confirmed. No action taken.");
-            if(!addTxInputsToDB(tx))
+            if(!addTxInputsToDB(rt))
                 return internalServerError("Failed to add tx inputs to DB");
             if(!updateTxStatus(payload, true))
                 return internalServerError("Failed to mark the TX confirmed");

@@ -3,32 +3,29 @@ package internal.rpc.pojo;
 import java.math.BigDecimal;
 import java.util.List;
 
-import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
-import com.fasterxml.jackson.annotation.JsonValue;
 
-@JsonInclude(Include.NON_NULL)
+@JsonInclude(Include.ALWAYS)
 //@JsonIgnoreProperties(ignoreUnknown=true)
 public class Transaction {
+    private String txid;
 	private BigDecimal fee;
 	private BigDecimal amount;
 	private long blockindex;
 	private long confirmations;
 	private long time;
 	private long timereceived;
+	private long block;
+	private String hex;
+	private String blockhash;
+	private String otheraccount;
+	private String comment;
+	private String to;
 	private long blocktime;
 	private List<String> walletconflicts;
 	private List<TransactionDetails> details;
-    private String txid;
-    private long block;
-    private String hex;
-    private String blockhash;
-    private String otheraccount;
-    private String comment;
-    private String to;
-    
-    
+
 	public String getOtheraccount() {
 		return otheraccount;
 	}
