@@ -17,7 +17,6 @@ public class Transaction {
 	private long confirmations;
 	private long time;
 	private long timereceived;
-	private String account;
 	private long block;
 	private String hex;
 	private String blockhash;
@@ -27,8 +26,6 @@ public class Transaction {
 	private long blocktime;
 	private List<String> walletconflicts;
 	private List<TransactionDetails> details;
-
-	public String getAccount() { return account; }
 
 	public String getOtheraccount() {
 		return otheraccount;
@@ -80,8 +77,7 @@ public class Transaction {
 		for(TransactionDetails d : details){
 			if(categoryString == null)
 				categoryString = d.getCategory();
-			else
-			if(!categoryString.equals(d.getCategory()))
+			else if(!categoryString.equals(d.getCategory()))
 				return null;
 		}
 		return categoryString;
@@ -102,11 +98,23 @@ public class Transaction {
 		for(TransactionDetails d : details){
 			if(addrString == null)
 				addrString = d.getAddress();
-			else
-				if(!addrString.equals(d.getAddress()))
+			else if(!addrString.equals(d.getAddress()))
 					return null;
 		}
 		return addrString;
+	}
+
+	public String getAccount() {
+		if(details == null || details.size() == 0)
+			return null;
+		String accountString = null;
+		for(TransactionDetails d : details){
+			if(accountString == null)
+				accountString = d.getAccount();
+			else if(!accountString.equals(d.getAccount()))
+				return null;
+		}
+		return accountString;
 	}
 
 	public String getTxid() {
