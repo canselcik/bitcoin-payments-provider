@@ -18,8 +18,6 @@ public class Transaction {
 	private long time;
 	private long timereceived;
 	private String account;
-	private String category;
-	private String address;
 	private long block;
 	private String hex;
 	private String blockhash;
@@ -31,8 +29,6 @@ public class Transaction {
 	private List<TransactionDetails> details;
 
 	public String getAccount() { return account; }
-
-	public String getCategory() { return category; }
 
 	public String getOtheraccount() {
 		return otheraccount;
@@ -77,7 +73,7 @@ public class Transaction {
 		return this;
 	}
 
-	/*public String getCategory() {
+	public String getCategory() {
 		if(details == null || details.size() == 0)
 			return null;
 		String categoryString = null;
@@ -89,7 +85,7 @@ public class Transaction {
 				return null;
 		}
 		return categoryString;
-	}*/
+	}
 
 	public long getConfirmations() {
 		return confirmations;
@@ -98,8 +94,8 @@ public class Transaction {
 		this.confirmations = confirmations;
 		return this;
 	}
-	public String getAddress() { return address; }
-	/*public String getAddress() {
+
+	public String getAddress() {
 		if(details == null || details.size() == 0)
 			return null;
 		String addrString = null;
@@ -111,7 +107,7 @@ public class Transaction {
 					return null;
 		}
 		return addrString;
-	}*/
+	}
 
 	public String getTxid() {
 		return txid;
